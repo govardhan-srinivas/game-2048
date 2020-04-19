@@ -1,0 +1,22 @@
+.main {
+    text-align: center;
+  h2 {
+    color: #fff;
+    background-color: #80808026;
+    text-transform: uppercase;
+  }
+  table {
+    transform: translate(50%,0%);
+    width: 50%;
+    tr {
+      td {
+        width: 40px;
+        height: 40px;
+        padding: 20px;
+        font-size: 30px;
+        color: #fff;
+        background-color: #80808026;
+      }
+    }
+  }
+}
