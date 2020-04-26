@@ -17,21 +17,21 @@ export class AppComponent implements OnInit {
 
   @HostListener("window:keyup", ["$event"])
   keyEvent(event: KeyboardEvent) {
-    console.log(event);
-    switch(event.keyCode){
-      case KEY_CODE.RIGHT_ARROW:this.model.moveRight();break;
+    switch (event.keyCode) {
+      case KEY_CODE.UP_ARROW:
+        this.model.moveUp();
+        break;
+      case KEY_CODE.DOWN_ARROW:
+        this.model.moveDown();
+        break;
+      case KEY_CODE.LEFT_ARROW:
+        this.model.moveLeft();
+        break;
+      case KEY_CODE.RIGHT_ARROW:
+        this.model.moveRight();
+        break;
     }
 
-    if (event.keyCode === KEY_CODE.LEFT_ARROW) {
-      this.model.moveLeft();
-    }
-    if (event.keyCode === KEY_CODE.UP_ARROW) {
-      this.model.moveUp();
-    }
-
-    if (event.keyCode === KEY_CODE.DOWN_ARROW) {
-      this.model.moveDown();
-    }
     this.model.fillRandomEmptyCell();
   }
 
@@ -39,21 +39,28 @@ export class AppComponent implements OnInit {
     size = parseInt(size.toString(), 10);
     this.model = new Data(size);
     this.model.fillRandomEmptyCell();
+    this.model.fillRandomEmptyCell();
+    this.model.fillRandomEmptyCell();
+    // this.model.fillRandomEmptyCell();
+    // this.model.fillRandomEmptyCell();
     // this.model.moveRight();
   }
 }
+
 export enum KEY_CODE {
   RIGHT_ARROW = 39,
   LEFT_ARROW = 37,
   UP_ARROW = 38,
   DOWN_ARROW = 40,
 }
+
 export class Data {
   public size: number;
   public title: string;
   public score: number;
   public matrix: number[][];
-  public availableDigits: Array<number>;
+  private availableDigits: Array<number>;
+  private skipNextLoop: boolean;
 
   constructor(size: number = 4) {
     this.size = size;
@@ -115,136 +122,123 @@ export class Data {
     }
   }
 
-  private checkMovementElements(i,j,currentItem,nextItem) {
-    if (!nextItem && !currentItem) {
-      // skip the iteration
-    } else if (currentItem === nextItem) {
-      // Check if i & i+1 elements are same, if so add them
-      nextItem += currentItem;
-      currentItem = 0;
-      this.matrix[i][j] = currentItem;
-      this.matrix[i][j] = nextItem;
-    } else if (currentItem !== 0) {
-      // console.log("swap", currentItem, nextItem);
-      // Check if i not equal to 0 & i+1 equals 0 , if so swap them
-      const temp = currentItem;
-      currentItem = nextItem;
-      nextItem = temp;
-      this.matrix[i][j] = currentItem;
-      this.matrix[i][j] = nextItem;
-      // console.log("swap", this.matrix[i][j], this.matrix[i][j]);
-    }
-  }
-
-  public moveDown() {
-    // comparing i & i+1 cell at a time, so reducing 1 loop
-    for (let i = 0; i < this.size - 1; i++) {
-      for (let j = 0; j < this.size; j++) {
-        let currentItem = this.matrix[i][j],
-          nextItem = this.matrix[i + 1][j];
-        if (!nextItem && !currentItem) {
-          // skip the iteration
-          continue;
-        } else if (currentItem === nextItem) {
-          // Check if i & i+1 elements are same, if so add them
-          nextItem += currentItem;
-          currentItem = 0;
-          this.matrix[i][j] = currentItem;
-          this.matrix[i + 1][j] = nextItem;
-        } else if (currentItem !== 0) {
-          // console.log("swap", currentItem, nextItem);
-          // Check if i not equal to 0 & i+1 equals 0 , if so swap them
-          const temp = currentItem;
-          currentItem = nextItem;
-          nextItem = temp;
-          this.matrix[i][j] = currentItem;
-          this.matrix[i + 1][j] = nextItem;
-          // console.log("swap", this.matrix[i][j], this.matrix[i + 1][j]);
-        }
+  private bubbleUpZero(
+    currentCell: Cell,
+    options: { value: string; bubbleDirection: string }
+  ): void {
+    if (options.value === "x" && options.bubbleDirection === "decrement") {
+      for (let i = currentCell.x; i > 0; i--) {
+        this.matrix[i][currentCell.y] = this.matrix[i - 1][currentCell.y];
+        this.matrix[i - 1][currentCell.y] = 0;
+      }
+    } else if (
+      options.value === "x" &&
+      options.bubbleDirection === "increment"
+    ) {
+      // Compares the next element, so skipping the last element
+      for (let i = currentCell.x; i < this.size - 1; i++) {
+        console.log(i, this.matrix);
+        this.matrix[i][currentCell.y] = this.matrix[i + 1][currentCell.y];
+        this.matrix[i + 1][currentCell.y] = 0;
+      }
+    } else if (
+      options.value === "y" &&
+      options.bubbleDirection === "decrement"
+    ) {
+      // Compares the next element, so skipping the last element
+      for (let i = currentCell.y; i > 0; i--) {
+        this.matrix[currentCell.x][i] = this.matrix[currentCell.x][i - 1];
+        this.matrix[currentCell.x][i - 1] = 0;
+      }
+    } else if (
+      options.value === "y" &&
+      options.bubbleDirection === "increment"
+    ) {
+      // Compares the next element, so skipping the last element
+      for (let i = currentCell.y; i < this.size - 1; i++) {
+        console.log(i, this.matrix);
+        this.matrix[currentCell.x][i] = this.matrix[currentCell.x][i + 1];
+        this.matrix[currentCell.x][i + 1] = 0;
       }
     }
   }
+
+  private checkMovementElements(
+    currentCell: Cell,
+    nextCell: Cell,
+    options: { value: string; bubbleDirection: string }
+  ): void {
+    // bubble up zero's to top
+    // Add same elements & make clear previous element, don't add up for next element
+    let currentItem = this.matrix[currentCell.x][currentCell.y],
+      nextItem = this.matrix[nextCell.x][nextCell.y];
+    if (nextItem === 0 && currentItem === 0) {
+      // skip the iteration
+    } else if (!this.skipNextLoop && currentItem === nextItem) {
+      // Check if i & i+1 elements are same, if so add them
+      this.matrix[currentCell.x][currentCell.y] = 0;
+      this.matrix[nextCell.x][nextCell.y] = nextItem + currentItem;
+      this.skipNextLoop = true;
+      this.bubbleUpZero(currentCell, options);
+    } else if (nextItem === 0) {
+      // console.log("swap", currentItem, nextItem);
+      // Swap only at zero
+      const temp = currentItem;
+      this.matrix[currentCell.x][currentCell.y] = nextItem;
+      this.matrix[nextCell.x][nextCell.y] = temp;
+      this.skipNextLoop = false;
+      // console.log("swap", this. matrix[currentCell.x][currentCell.y], this.matrix[nextCell.x][nextCell.y]);
+      this.bubbleUpZero(currentCell, options);
+    }
+  }
+
   public moveUp() {
     for (let i = this.size - 1; i > 0; i--) {
+      this.skipNextLoop = false;
       for (let j = 0; j < this.size; j++) {
-        let currentItem = this.matrix[i][j],
-          nextItem = this.matrix[i - 1][j];
-        console.log(`${i}${j}=>${currentItem}   ${i - 1}${j}=>${nextItem}`);
-        if (!nextItem && !currentItem) {
-          // skip the iteration
-          continue;
-        } else if (currentItem === nextItem) {
-          // Check if i & i+1 elements are same, if so add them
-          nextItem += currentItem;
-          currentItem = 0;
-          this.matrix[i][j] = currentItem;
-          this.matrix[i - 1][j] = nextItem;
-        } else if (currentItem !== 0) {
-          // console.log("swap", currentItem, nextItem);
-          // Check if i not equal to 0 & i+1 equals 0 , if so swap them
-          const temp = currentItem;
-          currentItem = nextItem;
-          nextItem = temp;
-          this.matrix[i][j] = currentItem;
-          this.matrix[i - 1][j] = nextItem;
-          // console.log("swap", this.matrix[i][j], this.matrix[i - 1][j]);
-        }
+        this.checkMovementElements(
+          { x: i, y: j },
+          { x: i - 1, y: j },
+          { value: "x", bubbleDirection: "increment" }
+        );
+      }
+    }
+  }
+  public moveDown() {
+    // comparing i & i+1 cell at a time, so reducing 1 loop
+    for (let i = 0; i < this.size; i++) {
+      this.skipNextLoop = false;
+      for (let j = 0; j < this.size; j++) {
+        this.checkMovementElements(
+          { x: i, y: j },
+          { x: i + 1, y: j },
+          { value: "x", bubbleDirection: "decrement" }
+        );
+      }
+    }
+  }
+  public moveLeft() {
+    for (let i = 0; i < this.size; i++) {
+      this.skipNextLoop = false;
+      for (let j = this.size - 1; j > 0; j--) {
+        this.checkMovementElements(
+          { x: i, y: j },
+          { x: i, y: j - 1 },
+          { value: "y", bubbleDirection: "increment" }
+        );
       }
     }
   }
   public moveRight() {
     // comparing i & i+1 cell at a time, so reducing 1 loop
     for (let i = 0; i < this.size; i++) {
-      for (let j = 0; j < this.size-1; j++) {
-        let currentItem = this.matrix[i][j],
-          nextItem = this.matrix[i][j + 1];
-        if (!nextItem && !currentItem) {
-          // skip the iteration
-          continue;
-        } else if (currentItem === nextItem) {
-          // Check if i & i+1 elements are same, if so add them
-          nextItem += currentItem;
-          currentItem = 0;
-          this.matrix[i][j] = currentItem;
-          this.matrix[i][j + 1] = nextItem;
-        } else if (currentItem !== 0) {
-          // console.log("swap", currentItem, nextItem);
-          // Check if i not equal to 0 & i+1 equals 0 , if so swap them
-          const temp = currentItem;
-          currentItem = nextItem;
-          nextItem = temp;
-          this.matrix[i][j] = currentItem;
-          this.matrix[i][j + 1] = nextItem;
-          // console.log("swap", this.matrix[i][j], this.matrix[i][j + 1]);
-        }
-      }
-    }
-  }
-  public moveLeft() {
-    for (let  i = 0; i < this.size; i++) {
-      for (let j = this.size - 1; j > 0; j--) {
-        let currentItem = this.matrix[i][j],
-          nextItem = this.matrix[i][j - 1];
-          // console.log(i,j,'=',currentItem,'----',i,j+1,'=',nextItem)
-        if (!nextItem && !currentItem) {
-          // skip the iteration
-          continue;
-        } else if (currentItem === nextItem) {
-          // Check if i & i+1 elements are same, if so add them
-          nextItem += currentItem;
-          currentItem = 0;
-          this.matrix[i][j] = currentItem;
-          this.matrix[i][j - 1] = nextItem;
-        } else if (currentItem !== 0) {
-          // console.log("swap", currentItem, nextItem);
-          // Check if i not equal to 0 & i+1 equals 0 , if so swap them
-          const temp = currentItem;
-          currentItem = nextItem;
-          nextItem = temp;
-          this.matrix[i][j] = currentItem;
-          this.matrix[i][j - 1] = nextItem;
-          // console.log("swap", this.matrix[i][j], this.matrix[i][j - 1]);
-        }
+      this.skipNextLoop = false;
+      for (let j = 0; j < this.size; j++) {
+        this.checkMovementElements(
+          { x: i, y: j },
+          { x: i, y: j + 1 },
+          { value: "y", bubbleDirection: "decrement" }
+        );
       }
     }
   }
