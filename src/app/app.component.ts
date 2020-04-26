@@ -20,30 +20,28 @@ export class AppComponent implements OnInit {
     switch (event.keyCode) {
       case KEY_CODE.UP_ARROW:
         this.model.moveUp();
+        this.model.fillRandomEmptyCell();
         break;
       case KEY_CODE.DOWN_ARROW:
         this.model.moveDown();
+        this.model.fillRandomEmptyCell();
         break;
       case KEY_CODE.LEFT_ARROW:
         this.model.moveLeft();
+        this.model.fillRandomEmptyCell();
         break;
       case KEY_CODE.RIGHT_ARROW:
         this.model.moveRight();
+        this.model.fillRandomEmptyCell();
         break;
     }
 
-    this.model.fillRandomEmptyCell();
   }
 
   public initGame(size: number) {
     size = parseInt(size.toString(), 10);
     this.model = new Data(size);
     this.model.fillRandomEmptyCell();
-    this.model.fillRandomEmptyCell();
-    this.model.fillRandomEmptyCell();
-    // this.model.fillRandomEmptyCell();
-    // this.model.fillRandomEmptyCell();
-    // this.model.moveRight();
   }
 }
 
@@ -71,7 +69,7 @@ export class Data {
   }
 
   private getTitle(): string {
-    return `Game - ${this.size * this.size}`;
+    return `2048`;
   }
 
   private getMatrix(): number[][] {

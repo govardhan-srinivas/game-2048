@@ -1,13 +1,20 @@
 <div class="main">
-  <h2>{{ model.title }} </h2>
-  <select name="" [(ngModel)]="size" (ngModelChange)="initGame(size)">
-    <option *ngFor="let item of [4,5,6,7,8]" [value]="item">{{item}}</option>
-  </select>
+  <span class="forkongithub"><a href="https://github.com/mobiniusgovardhan/game-2048">Fork me on GitHub</a></span>
+  <h1>{{ model.title }} </h1>
+  <div class="description">Join the numbers and get to the <strong>2048 tile!</strong></div>
+  <div class="size"> Size of the tile: 
+    <select name="" [(ngModel)]="size" (ngModelChange)="initGame(size)">
+      <option *ngFor="let item of [4,5,6,7,8]" [value]="item">{{item}}</option>
+    </select>
+  </div>
   <table>
     <tbody>
       <tr *ngFor="let row of model.matrix">
-        <td *ngFor="let column of row">{{ column }}</td>
+        <td *ngFor="let column of row" [attr.data-color]="column">{{ column }}</td>
       </tr>
     </tbody>
   </table>
+  <p>
+    <strong class="important">How to play:</strong> Use your <strong>arrow keys</strong> to move the tiles. When two tiles with the same number touch, they <strong>merge into one!</strong>
+  </p>
 </div>
